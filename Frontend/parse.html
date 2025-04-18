@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoBank - Blockchain Banking Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.8.0/web3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --primary: #3a86ff;
+            --primary-dark: #2667cc;
+            --secondary: #8338ec;
+            --success: #06d6a0;
+            --danger: #ef476f;
+            --warning: #ffd166;
+            --info: #118ab2;
+            --dark: #073b4c;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --border-radius: 10px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: #f0f5ff;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem 1rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            transition: var(--transition);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .brand-logo {
+            height: 40px;
+            width: 40px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .menu {
+            list-style: none;
+            padding: 0;
+            margin-top: 2rem;
+        }
+
+        .menu-item {
+            margin-bottom: 0.8rem;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        .menu-link:hover,
+        .menu-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .menu-link i {
+            width: 20px;
+        }
+
+        .connected-status {
+            margin-top: auto;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+        }
+
+        .network-badge {
+            display: inline-block;
+            background-color: var(--success);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .connect-button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .connect-button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--box-shadow);
+        }
+
+        .balance-card {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .balance-amount {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin: 1.5rem 0;
+        }
+
+        .address-display {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 0.8rem;
+            border-radius: var(--border-radius);
+            font-family: monospace;
+            word-break: break-all;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Quick Transfer Section */
+        .transfer-form-container {
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+        }
+
+        .input-group {
+            display: flex;
+        }
+
+        .input-group .form-control {
+            border-radius: var(--border-radius) 0 0 var(--border-radius);
+        }
+
+        .input-group-append {
+            background-color: #eee;
+            border: 1px solid #ddd;
+            border-left: none;
+            padding: 0 1rem;
+            display: flex;
+            align-items: center;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            font-weight: 600;
+        }
+
+        .submit-button {
+            background-color: var(--success);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .submit-button:hover {
+            background-color: #05b386;
+        }
+
+        /* Contacts Section */
+        .contacts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .contact-card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            box-shadow: var(--box-shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+        }
+
+        .contact-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        .contact-card.active {
+            border-color: var(--primary);
+            background-color: #f0f7ff;
+        }
+
+        .contact-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .contact-avatar.user1 {
+            background-color: #3a86ff;
+        }
+
+        .contact-avatar.user2 {
+            background-color: #8338ec;
+        }
+
+        .contact-avatar.user3 {
+            background-color: #ff006e;
+        }
+
+        .contact-avatar.user4 {
+            background-color: #fb5607;
+        }
+
+        .contact-avatar.user5 {
+            background-color: #ffbe0b;
+        }
+
+        .contact-name {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .contact-address {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--gray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Transaction History */
+        .transaction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .transaction-table th {
+            font-weight: 600;
+            color: var(--gray);
+        }
+
+        .transaction-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .transaction-status {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-sent {
+            background-color: #ffefef;
+            color: var(--danger);
+        }
+
+        .status-received {
+            background-color: #e6fff8;
+            color: var(--success);
+        }
+
+        .transaction-address {
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+
+        .transaction-time {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .transaction-amount {
+            font-weight: 600;
+        }
+
+        .amount-sent {
+            color: var(--danger);
+        }
+
+        .amount-received {
+            color: var(--success);
+        }
+
+        .transaction-id {
+            font-family: monospace;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* Analytics Section */
+        .analytics-section {
+            margin-bottom: 2rem;
+            display: none;
+            /* Hidden by default */
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+
+        /* Contacts Section */
+        .contacts-section {
+            margin-bottom: 2rem;
+            display: none;
+            /* Hidden by default */
+        }
+
+        .add-contact-form {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .modal {
+            background-color: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+       .modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        display: none;
+    }
+    
+    .mobile-menu-toggle {
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .transaction-table th:nth-child(3),
+    .transaction-table td:nth-child(3) {
+        display: none;
+    }
+}
+
+/* Utility Classes */
+.text-primary { color: var(--primary); }
+.text-secondary { color: var(--secondary); }
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-warning { color: var(--warning); }
+.text-info { color: var(--info); }
+.text-dark { color: var(--dark); }
+.text-light { color: var(--light); }
+.text-gray { color: var(--gray); }
+
+.d-flex { display: flex; }
+.align-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 1rem; }
+.gap-2 { gap: 2rem; }
+
+.mb-1 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 2rem; }
+.mt-1 { margin-top: 1rem; }
+.mt-2 { margin-top: 2rem; }
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Dashboard Sections */
+.dashboard-section {
+    display: none;
+}
+
+.dashboard-section.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+</style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="brand">
+                <div class="brand-logo">C</div>
+                <div class="brand-name">CryptoBank</div>
+            </div>
+
+            <ul class="menu">
+                <li class="menu-item">
+                    <a href="#dashboard" class="menu-link active" data-section="dashboard-section">
+                        <i class="fas fa-th-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#transactions" class="menu-link" data-section="transactions-section">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>Transactions</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#analytics" class="menu-link" data-section="analytics-section">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#contacts" class="menu-link" data-section="contacts-section">
+                        <i class="fas fa-address-book"></i>
+                        <span>Contacts</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#settings" class="menu-link" data-section="settings-section">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="connected-status">
+                <div>Connected to</div>
+                <div class="network-badge">Ethereum Mainnet</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1 class="page-title">Dashboard</h1>
+                <div class="user-info">
+                    <button class="connect-button" id="connectWallet">
+                        <i class="fas fa-wallet"></i>
+                        <span>Connect Wallet</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <div id="dashboard-section" class="dashboard-section active">
+                <div class="dashboard-grid">
+                    <div class="card balance-card">
+                        <div class="card-header">
+                            <h2>Your Balance</h2>
+                            <div class="card-icon">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                        </div>
+                        <div class="balance-amount">0.00 ETH</div>
+                        <div class="address-display">
+                            <span>Not connected</span>
+                            <button class="copy-button"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>Quick Transfer</h2>
+                        </div>
+                        <div class="transfer-form-container">
+                            <form id="transferForm">
+                                <div class="form-group">
+                                    <label for="recipientAddress" class="form-label">Recipient Address</label>
+                                    <input type="text" id="recipientAddress" class="form-control" placeholder="0x...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="amount" class="form-label">Amount</label>
+                                    <div class="input-group">
+                                        <input type="number" id="amount" class="form-control" placeholder="0.00"
+                                            step="0.01" min="0">
+                                        <div class="input-group-append">ETH</div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="submit-button">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Send Transfer
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="mb-2 mt-2">Recent Transactions</h2>
+                <div class="card">
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Address</th>
+                                <th>Transaction ID</th>
+                                <th>Time</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsList">
+                            <tr>
+                                <td><span class="transaction-status status-sent">Sent</span></td>
+                                <td>
+                                    <div class="transaction-address">0x71C7656EC7ab88b098defB751B7401B5f6d8976F</div>
+                                </td>
+                                <td><span class="transaction-id">0x429d...a3f4</span></td>
+                                <td><span class="transaction-time">2 hours ago</span></td>
+                                <td><span class="transaction-amount amount-sent">-0.5 ETH</span></td>
+                            </tr>
+                            <tr>
+                                <td><span class="transaction-status status-received">Received</span></td>
+                                <td>
+                                    <div class="transaction-address">0x2546BcD3c84621e976D8185a91A922aE77ECEc30</div>
+                                </td>
+                                <td><span class="transaction-id">0x8f12...b6e2</span></td>
+                                <td><span class="transaction-time">Yesterday</span></td>
+                                <td><span class="transaction-amount amount-received">+1.2 ETH</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analytics Section -->
+            <div id="analytics-section" class="dashboard-section analytics-section">
+                <h2 class="mb-2">Analytics</h2>
+                <div class="analytics-grid">
+                    <div class="card">
+                        <h3>Transaction History</h3>
+                        <div class="chart-container">
+                            <canvas id="transactionChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Balance History</h3>
+                        <div class="chart-container">
+                            <canvas id="balanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacts Section -->
+            <div id="contacts-section" class="dashboard-section contacts-section">
+                <div class="transaction-header">
+                    <h2>Your Contacts</h2>
+                    <button class="connect-button" id="addContactBtn">
+                        <i class="fas fa-plus"></i>
+                        Add Contact
+                    </button>
+                </div>
+
+                <div class="contacts-container" id="contactsList">
+                    <!-- Contact cards will be populated dynamically -->
+                </div>
+
+                <div class="add-contact-form card mt-2">
+                    <h3>Add New Contact</h3>
+                    <form id="addContactForm">
+                        <div class="form-group">
+                            <label for="contactName" class="form-label">Name</label>
+                            <input type="text" id="contactName" class="form-control" placeholder="Contact name">
+                        </div>
+                        <div class="form-group">
+                            <label for="contactAddress" class="form-label">Wallet Address</label>
+                            <input type="text" id="contactAddress" class="form-control" placeholder="0x...">
+                        </div>
+                        <button type="submit" class="submit-button">
+                            <i class="fas fa-save"></i>
+                            Save Contact
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Details Modal -->
+    <div class="modal-overlay" id="transactionModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Transaction Details</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Transaction ID</label>
+                    <div class="form-control" id="modalTxId">0x429d...a3f4</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">From</label>
+                    <div class="form-control" id="modalFrom">0x429d...a3f4</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">To</label>
+                    <div class="form-control" id="modalTo">0x429d...a3f4</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Amount</label>
+                    <div class="form-control" id="modalAmount">0.5 ETH</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Gas Fee</label>
+                    <div class="form-control" id="modalGas">0.005 ETH</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <div class="form-control" id="modalStatus">Confirmed</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Time</label>
+                    <div class="form-control" id="modalTime">Mar 16, 2023 14:24:36</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="connect-button" id="viewOnExplorer">
+                    <i class="fas fa-external-link-alt"></i>
+                    View on Explorer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data
+        const sampleContacts = [
+            { name: "Alex", address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F" },
+            { name: "Sarah", address: "0x2546BcD3c84621e976D8185a91A922aE77ECEc30" },
+            { name: "Blockchain Fund", address: "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199" }
+        ];
+
+        // DOM Elements
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const balanceDisplay = document.querySelector('.balance-amount');
+        const addressDisplay = document.querySelector('.address-display span');
+        const menuLinks = document.querySelectorAll('.menu-link');
+        const dashboardSections = document.querySelectorAll('.dashboard-section');
+        const contactsList = document.getElementById('contactsList');
+        const transactionModal = document.getElementById('transactionModal');
+        const modalClose = document.querySelector('.modal-close');
+        const transactionIds = document.querySelectorAll('.transaction-id');
+
+        // Initialize the dashboard
+        function initDashboard() {
+            // Populate contacts
+            populateContacts();
+
+            // Initialize charts
+            initCharts();
+
+            // Add event listeners
+            addEventListeners();
+        }
+
+        // Populate contacts list
+        function populateContacts() {
+            contactsList.innerHTML = '';
+
+            const colors = ['user1', 'user2', 'user3', 'user4', 'user5'];
+
+            sampleContacts.forEach((contact, index) => {
+                const colorClass = colors[index % colors.length];
+                const initials = contact.name.charAt(0).toUpperCase();
+
+                const contactCard = document.createElement('div');
+                contactCard.className = 'contact-card';
+                contactCard.innerHTML = `
+                    <div class="contact-avatar ${colorClass}">${initials}</div>
+                    <div class="contact-name">${contact.name}</div>
+                    <div class="contact-address">${contact.address}</div>
+                `;
+
+                contactCard.addEventListener('click', () => {
+                    document.getElementById('recipientAddress').value = contact.address;
+                    // Switch to dashboard
+                    activateSection('dashboard-section');
+                });
+
+                contactsList.appendChild(contactCard);
+            });
+                    }
+
+                    // Initialize charts
+                    function initCharts() {
+                        // Transaction chart
+                        const transactionCtx = document.getElementById('transactionChart').getContext('2d');
+                        const transactionChart = new Chart(transactionCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                                datasets: [{
+                                    label: 'Transactions',
+                                    data: [3, 1, 4, 2, 5, 2, 3],
+                                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+
+                        // Balance chart
+                        const balanceCtx = document.getElementById('balanceChart').getContext('2d');
+                        const balanceChart = new Chart(balanceCtx, {
+                            type: 'line',
+                            data: {
+                                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                                datasets: [{
+                                    label: 'Balance (ETH)',
+                                    data: [2.5, 3.1, 2.6, 3.8, 3.3, 3.8, 4.5],
+                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 2,
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: false
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    // Add event listeners
+                    function addEventListeners() {
+                        // Menu navigation
+                        menuLinks.forEach(link => {
+                            link.addEventListener('click', (e) => {
+                                e.preventDefault();
+
+                                // Remove active class from all links
+                                menuLinks.forEach(item => item.classList.remove('active'));
+
+                                // Add active class to clicked link
+                                link.classList.add('active');
+
+                                // Activate corresponding section
+                                const sectionId = link.getAttribute('data-section');
+                                activateSection(sectionId);
+                            });
+                        });
+
+                        // Connect wallet button
+                        connectWalletBtn.addEventListener('click', async () => {
+                            try {
+                                // Check if MetaMask is installed
+                                if (window.ethereum) {
+                                    // Request account access
+                                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                                    const account = accounts[0];
+
+                                    // Display connected address
+                                    addressDisplay.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+
+                                    // Update button text
+                                    connectWalletBtn.innerHTML = '<i class="fas fa-wallet"></i><span>Connected</span>';
+
+                                    // Get balance
+                                    const balance = await window.ethereum.request({
+                                        method: 'eth_getBalance',
+                                        params: [account, 'latest']
+                                    });
+
+                                    // Convert balance from wei to ETH
+                                    const ethBalance = parseInt(balance, 16) / 1e18;
+                                    balanceDisplay.textContent = `${ethBalance.toFixed(4)} ETH`;
+
+                                    // Listen for account changes
+                                    window.ethereum.on('accountsChanged', handleAccountsChanged);
+                                } else {
+                                    alert('MetaMask is not installed. Please install it to use this app.');
+                                }
+                            } catch (error) {
+                                console.error(error);
+                                alert('Failed to connect wallet: ' + error.message);
+                            }
+                        });
+
+                        // Handle account changes
+                        function handleAccountsChanged(accounts) {
+                            if (accounts.length === 0) {
+                                // User disconnected
+                                addressDisplay.textContent = 'Not connected';
+                                balanceDisplay.textContent = '0.00 ETH';
+                                connectWalletBtn.innerHTML = '<i class="fas fa-wallet"></i><span>Connect Wallet</span>';
+                            } else {
+                                // Account changed
+                                const account = accounts[0];
+                                addressDisplay.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+                            }
+                        }
+
+                        // Transfer form submission
+                        document.getElementById('transferForm').addEventListener('submit', async (e) => {
+                            e.preventDefault();
+
+                            const recipient = document.getElementById('recipientAddress').value;
+                            const amount = document.getElementById('amount').value;
+
+                            if (!recipient || !amount) {
+                                alert('Please fill in all fields');
+                                return;
+                            }
+
+                            try {
+                                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                                const account = accounts[0];
+
+                                // Convert ETH to wei
+                                const weiAmount = (amount * 1e18).toString(16);
+
+                                // Send transaction
+                                const transactionParameters = {
+                                    from: account,
+                                    to: recipient,
+                                    value: '0x' + weiAmount,
+                                    gas: '0x5208', // 21000 gas
+                                };
+
+                                const txHash = await window.ethereum.request({
+                                    method: 'eth_sendTransaction',
+                                    params: [transactionParameters],
+                                });
+
+                                alert(`Transaction sent! Hash: ${txHash}`);
+
+                                // Reset form
+                                document.getElementById('transferForm').reset();
+
+                                // Add transaction to list (for demo purposes)
+                                addTransactionToList('Sent', recipient, txHash, 'Just now', `-${amount} ETH`);
+                            } catch (error) {
+                                console.error(error);
+                                alert('Transaction failed: ' + error.message);
+                            }
+                        });
+
+                        // Add contact form submission
+                        document.getElementById('addContactForm').addEventListener('submit', (e) => {
+                            e.preventDefault();
+
+                            const name = document.getElementById('contactName').value;
+                            const address = document.getElementById('contactAddress').value;
+
+                            if (!name || !address) {
+                                alert('Please fill in all fields');
+                                return;
+                            }
+
+                            // Add contact to list
+                            sampleContacts.push({ name, address });
+
+                            // Repopulate contacts
+                            populateContacts();
+
+                            // Reset form
+                            document.getElementById('addContactForm').reset();
+
+                            alert('Contact added successfully!');
+                        });
+
+                        // Transaction modal
+                        transactionIds.forEach(id => {
+                            id.addEventListener('click', () => {
+                                transactionModal.classList.add('active');
+                            });
+                        });
+
+                        modalClose.addEventListener('click', () => {
+                            transactionModal.classList.remove('active');
+                        });
+
+                        // Close modal when clicking outside
+                        window.addEventListener('click', (e) => {
+                            if (e.target === transactionModal) {
+                                transactionModal.classList.remove('active');
+                            }
+                        });
+                    }
+
+                    // Activate dashboard section
+                    function activateSection(sectionId) {
+                        // Update page title
+                        const sectionTitle = sectionId.replace('-section', '').replace(/-/g, ' ');
+                        document.querySelector('.page-title').textContent = sectionTitle.charAt(0).toUpperCase() + sectionTitle.slice(1);
+
+                        // Hide all sections
+                        dashboardSections.forEach(section => {
+                            section.classList.remove('active');
+                        });
+
+                        // Show selected section
+                        document.getElementById(sectionId).classList.add('active');
+                    }
+
+                    // Add transaction to list
+                    function addTransactionToList(type, address, txId, time, amount) {
+                        const transactionsList = document.getElementById('transactionsList');
+                        const statusClass = type === 'Sent' ? 'status-sent' : 'status-received';
+                        const amountClass = type === 'Sent' ? 'amount-sent' : 'amount-received';
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                <td><span class="transaction-status ${statusClass}">${type}</span></td>
+                <td><div class="transaction-address">${address}</div></td>
+                <td><span class="transaction-id">${txId.substring(0, 6)}...${txId.substring(txId.length - 4)}</span></td>
+                <td><span class="transaction-time">${time}</span></td>
+                <td><span class="transaction-amount ${amountClass}">${amount}</span></td>
+            `;
+
+                        // Add event listener to transaction ID
+                        row.querySelector('.transaction-id').addEventListener('click', () => {
+                            document.getElementById('modalTxId').textContent = txId;
+                            document.getElementById('modalFrom').textContent = type === 'Sent' ? addressDisplay.textContent : address;
+                            document.getElementById('modalTo').textContent = type === 'Sent' ? address : addressDisplay.textContent;
+                            document.getElementById('modalAmount').textContent = amount.replace('-', '');
+                            document.getElementById('modalGas').textContent = '0.005 ETH';
+                            document.getElementById('modalStatus').textContent = 'Pending';
+                            document.getElementById('modalTime').textContent = new Date().toLocaleString();
+
+                            transactionModal.classList.add('active');
+                        });
+
+                        transactionsList.prepend(row);
+                    }
+
+                    // Initialize the dashboard when the page loads
+                    window.addEventListener('DOMContentLoaded', initDashboard);
+                </script>
+    </body>
+    
+    </html>
